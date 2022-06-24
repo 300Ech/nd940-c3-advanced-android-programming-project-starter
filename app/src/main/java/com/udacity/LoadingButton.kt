@@ -5,8 +5,10 @@ import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
+import android.widget.Button
 import androidx.core.content.withStyledAttributes
 import kotlin.properties.Delegates.observable
+
 
 class LoadingButton @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
@@ -15,7 +17,9 @@ class LoadingButton @JvmOverloads constructor(
     private var widthSize = 0F
     private var heightSize = 0F
     private val buttonRoundness = 50F
-    private var buttonRectangle: RectF
+    private var buttonRectangle = RectF(0f, 0f, 0f, 0f)
+    private var mRadarRect = RectF(0f, 0f, 0f, 0f)
+
     private val textSize2 = 55F
     private val textBound = Rect()
 
@@ -51,29 +55,43 @@ class LoadingButton @JvmOverloads constructor(
             textColorWhenLoading = getColor(R.styleable.LoadingButton_buttonLoadingTextColor, resources.getColor(R.color.colorPrimary))
         }
 
-        buttonRectangle = RectF()
         buttonState = ButtonState.Completed
     }
 
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
 
+        // Circle properties
+        val diameter = 100f
+        val radius = if (buttonState != ButtonState.Loading) 0f else diameter / 2
+
+        // text properties
         paint.color = backgroundColorWhenIdle
         buttonRectangle.set(0F, 0F, widthSize, heightSize)
         textBound.set(0, 0, width, height)
         canvas?.drawRoundRect(buttonRectangle, buttonRoundness, buttonRoundness, paint)
 
-        // Button label
+        // button text
         val textBoundHeight = textBound.height()
         val textBoundWidth = textBound.width()
         paint.textAlign = Paint.Align.LEFT
         paint.getTextBounds(textWhenIdle, 0, textWhenIdle.length, textBound)
         paint.color = textColorWhenIdle
 
-        val x: Float = textBoundWidth / 2f - textBound.width() / 2f - textBound.left
+        val x: Float = (textBoundWidth / 2f - textBound.width() / 2f - textBound.left) - radius
         val y: Float = textBoundHeight / 2f + textBound.height() / 2f - textBound.bottom
-
         canvas?.drawText(textWhenIdle, x, y, paint)
+
+        // animated circle
+        if (buttonState == ButtonState.Loading) {
+            val circleTop = (heightSize / 2) - radius
+            val circleBottom = (heightSize / 2) + radius
+            val circleLeft = paint.measureText(textWhenIdle) + x + 20f
+            val circleRight = circleLeft + diameter
+
+            mRadarRect.set(circleLeft, circleTop, circleRight, circleBottom)
+            canvas?.drawArc(mRadarRect, 0f, 300f, true, paint)
+        }
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {

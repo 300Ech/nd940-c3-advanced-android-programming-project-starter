@@ -28,23 +28,27 @@
         android:layout_marginStart="@dimen/common_margin"
         android:layout_marginTop="124dp"
         android:layout_marginEnd="@dimen/common_margin"
+        android:checkedButton="@+id/rbGlide"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <RadioButton
+            android:id="@+id/rbGlide"
             style="@style/RadioGroupOptions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/glide" />
 
         <RadioButton
+            android:id="@+id/rbLoadApp"
             style="@style/RadioGroupOptions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/load_app" />
 
         <RadioButton
+            android:id="@+id/rbRetrofit"
             style="@style/RadioGroupOptions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
