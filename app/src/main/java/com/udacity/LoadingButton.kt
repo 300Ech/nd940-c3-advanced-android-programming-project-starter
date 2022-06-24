@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
+import android.widget.Button
 import androidx.core.content.withStyledAttributes
 import kotlin.properties.Delegates.observable
 
@@ -20,6 +21,7 @@ class LoadingButton @JvmOverloads constructor(
     private var heightSize = 0F
     private val buttonRoundness = 50F
     private var buttonRectangle = RectF(0f, 0f, 0f, 0f)
+    private var buttonProgressRectangle = RectF(0f, 0f, 0f, 0f)
     private var mRadarRect = RectF(0f, 0f, 0f, 0f)
 
     private val textSize2 = 55F
@@ -36,9 +38,9 @@ class LoadingButton @JvmOverloads constructor(
     private var valueAnimator = ValueAnimator.ofInt(0, 360)
 
     private var buttonState: ButtonState by observable<ButtonState>(ButtonState.Completed) { p, old, new ->
-        when(buttonState) {
+        when (buttonState) {
             ButtonState.Loading -> {
-                isActivated  = false
+                isActivated = false
                 isClickable = false
                 buttonText = textWhenLoading
             }
@@ -46,6 +48,8 @@ class LoadingButton @JvmOverloads constructor(
                 buttonText = textWhenIdle
                 isActivated = true
                 isClickable = true
+
+                valueAnimator.cancel()
             }
             ButtonState.Clicked -> {
 
@@ -53,6 +57,10 @@ class LoadingButton @JvmOverloads constructor(
         }
 
         invalidate()
+    }
+
+    fun stop() {
+        buttonState = ButtonState.Completed
     }
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -66,13 +74,27 @@ class LoadingButton @JvmOverloads constructor(
         isClickable = true
 
         context.withStyledAttributes(attrs, R.styleable.LoadingButton) {
-            backgroundColorWhenIdle = getColor(R.styleable.LoadingButton_buttonBackgroundColor, resources.getColor(R.color.colorPrimary))
-            textWhenIdle = getString(R.styleable.LoadingButton_buttonText) ?: resources.getString(R.string.download)
-            textColorWhenIdle = getColor(R.styleable.LoadingButton_buttonTextColor, resources.getColor(R.color.colorAccent))
+            backgroundColorWhenIdle = getColor(
+                R.styleable.LoadingButton_buttonBackgroundColor,
+                resources.getColor(R.color.colorPrimary)
+            )
+            textWhenIdle = getString(R.styleable.LoadingButton_buttonText)
+                ?: resources.getString(R.string.download)
+            textColorWhenIdle = getColor(
+                R.styleable.LoadingButton_buttonTextColor,
+                resources.getColor(R.color.colorAccent)
+            )
 
-            backgroundColorWhenLoading = getColor(R.styleable.LoadingButton_buttonLoadingBackgroundColor, resources.getColor(R.color.colorAccent))
-            textWhenLoading = getString(R.styleable.LoadingButton_buttonLoadingText) ?: resources.getString(R.string.we_are_loading)
-            textColorWhenLoading = getColor(R.styleable.LoadingButton_buttonLoadingTextColor, resources.getColor(R.color.colorPrimary))
+            backgroundColorWhenLoading = getColor(
+                R.styleable.LoadingButton_buttonLoadingBackgroundColor,
+                resources.getColor(R.color.colorAccent)
+            )
+            textWhenLoading = getString(R.styleable.LoadingButton_buttonLoadingText)
+                ?: resources.getString(R.string.we_are_loading)
+            textColorWhenLoading = getColor(
+                R.styleable.LoadingButton_buttonLoadingTextColor,
+                resources.getColor(R.color.colorPrimary)
+            )
         }
 
         valueAnimator.apply {
@@ -105,12 +127,15 @@ class LoadingButton @JvmOverloads constructor(
         // Circle properties
         val diameter = 100f
         val radius = if (buttonState != ButtonState.Loading) 0f else diameter / 2
+        val spacing = 20f
 
         // text properties
         paint.color = backgroundColorWhenIdle
         buttonRectangle.set(0F, 0F, widthSize, heightSize)
         textBound.set(0, 0, width, height)
         canvas?.drawRoundRect(buttonRectangle, buttonRoundness, buttonRoundness, paint)
+
+        drawButtonProgress(canvas)
 
         // button text
         val textBoundHeight = textBound.height()
@@ -119,19 +144,35 @@ class LoadingButton @JvmOverloads constructor(
         paint.getTextBounds(buttonText, 0, buttonText.length, textBound)
         paint.color = textColorWhenIdle
 
-        val x: Float = (textBoundWidth / 2f - textBound.width() / 2f - textBound.left) - radius
+        val x: Float =
+            (textBoundWidth / 2f - textBound.width() / 2f - textBound.left) - (radius + (spacing / 2))
         val y: Float = textBoundHeight / 2f + textBound.height() / 2f - textBound.bottom
         canvas?.drawText(buttonText, x, y, paint)
 
         // animated circle
         if (buttonState == ButtonState.Loading) {
+            paint.color = resources.getColor(R.color.white)
             val circleTop = (heightSize / 2) - radius
             val circleBottom = (heightSize / 2) + radius
-            val circleLeft = paint.measureText(buttonText) + x + 20f
+            val circleLeft = paint.measureText(buttonText) + x + spacing
             val circleRight = circleLeft + diameter
 
             mRadarRect.set(circleLeft, circleTop, circleRight, circleBottom)
             canvas?.drawArc(mRadarRect, 0f, progress.toFloat(), true, paint)
+        }
+    }
+
+    private fun getButtonProgress(): Float {
+        val realProgress = (progress * 100) / 360
+        return ((realProgress * widthSize) / 100).toFloat()
+    }
+
+    private fun drawButtonProgress(canvas: Canvas?) {
+        if (buttonState == ButtonState.Loading) {
+            // draws progress
+            paint.color = backgroundColorWhenLoading
+            buttonProgressRectangle.set(buttonRectangle.left, 0F, getButtonProgress(), heightSize)
+            canvas?.drawRoundRect(buttonProgressRectangle, buttonRoundness, buttonRoundness, paint)
         }
     }
 
