@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
-import android.widget.Button
 import androidx.core.content.withStyledAttributes
 import kotlin.properties.Delegates.observable
 
@@ -13,6 +12,9 @@ import kotlin.properties.Delegates.observable
 class LoadingButton @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
+
+    private var progress: Double = 0.0
+
     private var buttonText = ""
     private var widthSize = 0F
     private var heightSize = 0F
@@ -31,9 +33,25 @@ class LoadingButton @JvmOverloads constructor(
     private var textWhenLoading = ""
     private var textColorWhenLoading = 0
 
-    private val valueAnimator = ValueAnimator()
+    private var valueAnimator = ValueAnimator.ofInt(0, 360)
 
     private var buttonState: ButtonState by observable<ButtonState>(ButtonState.Completed) { p, old, new ->
+        when(buttonState) {
+            ButtonState.Loading -> {
+                isActivated  = false
+                isClickable = false
+                buttonText = textWhenLoading
+            }
+            ButtonState.Completed -> {
+                buttonText = textWhenIdle
+                isActivated = true
+                isClickable = true
+            }
+            ButtonState.Clicked -> {
+
+            }
+        }
+
         invalidate()
     }
 
@@ -45,6 +63,8 @@ class LoadingButton @JvmOverloads constructor(
     }
 
     init {
+        isClickable = true
+
         context.withStyledAttributes(attrs, R.styleable.LoadingButton) {
             backgroundColorWhenIdle = getColor(R.styleable.LoadingButton_buttonBackgroundColor, resources.getColor(R.color.colorPrimary))
             textWhenIdle = getString(R.styleable.LoadingButton_buttonText) ?: resources.getString(R.string.download)
@@ -55,7 +75,28 @@ class LoadingButton @JvmOverloads constructor(
             textColorWhenLoading = getColor(R.styleable.LoadingButton_buttonLoadingTextColor, resources.getColor(R.color.colorPrimary))
         }
 
+        valueAnimator.apply {
+            duration = 2500
+            addUpdateListener {
+                progress = it.animatedValue.toString().toDouble()
+                invalidate()
+            }
+            repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.RESTART
+        }
+
         buttonState = ButtonState.Completed
+    }
+
+    override fun performClick(): Boolean {
+        super.performClick()
+
+        // starts animation
+        buttonState = ButtonState.Loading
+        valueAnimator.start()
+
+        invalidate()
+        return true
     }
 
     override fun onDraw(canvas: Canvas?) {
@@ -75,22 +116,22 @@ class LoadingButton @JvmOverloads constructor(
         val textBoundHeight = textBound.height()
         val textBoundWidth = textBound.width()
         paint.textAlign = Paint.Align.LEFT
-        paint.getTextBounds(textWhenIdle, 0, textWhenIdle.length, textBound)
+        paint.getTextBounds(buttonText, 0, buttonText.length, textBound)
         paint.color = textColorWhenIdle
 
         val x: Float = (textBoundWidth / 2f - textBound.width() / 2f - textBound.left) - radius
         val y: Float = textBoundHeight / 2f + textBound.height() / 2f - textBound.bottom
-        canvas?.drawText(textWhenIdle, x, y, paint)
+        canvas?.drawText(buttonText, x, y, paint)
 
         // animated circle
         if (buttonState == ButtonState.Loading) {
             val circleTop = (heightSize / 2) - radius
             val circleBottom = (heightSize / 2) + radius
-            val circleLeft = paint.measureText(textWhenIdle) + x + 20f
+            val circleLeft = paint.measureText(buttonText) + x + 20f
             val circleRight = circleLeft + diameter
 
             mRadarRect.set(circleLeft, circleTop, circleRight, circleBottom)
-            canvas?.drawArc(mRadarRect, 0f, 300f, true, paint)
+            canvas?.drawArc(mRadarRect, 0f, progress.toFloat(), true, paint)
         }
     }
 
