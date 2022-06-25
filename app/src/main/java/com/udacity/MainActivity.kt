@@ -131,21 +131,15 @@ class MainActivity : AppCompatActivity() {
         motionLayout.setTransitionDuration(5000)
         motionLayout.transitionToEnd()
         motionLayout.addTransitionListener(object : MotionLayout.TransitionListener {
-            override fun onTransitionStarted(p0: MotionLayout?, p1: Int, p2: Int) {
+            override fun onTransitionStarted(p0: MotionLayout?, p1: Int, p2: Int) { }
 
-            }
-
-            override fun onTransitionChange(p0: MotionLayout?, p1: Int, p2: Int, p3: Float) {
-
-            }
+            override fun onTransitionChange(p0: MotionLayout?, p1: Int, p2: Int, p3: Float) { }
 
             override fun onTransitionCompleted(p0: MotionLayout?, p1: Int) {
                 motionLayout.transitionToStart()
             }
 
-            override fun onTransitionTrigger(p0: MotionLayout?, p1: Int, p2: Boolean, p3: Float) {
-
-            }
+            override fun onTransitionTrigger(p0: MotionLayout?, p1: Int, p2: Boolean, p3: Float) { }
         })
     }
 
