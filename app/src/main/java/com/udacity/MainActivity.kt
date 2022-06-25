@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.widget.RadioButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.content.ContextCompat
 import com.udacity.util.cancelNotifications
 import com.udacity.util.sendNotification
@@ -27,6 +28,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var notificationManager: NotificationManager
     private lateinit var downloadManager: DownloadManager
+    private lateinit var motionLayout: MotionLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,11 +43,15 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.app_notification_channel_id),
             getString(R.string.app_notification_channel_name)
         )
+
+        motionLayout = findViewById(R.id.main_layout)
     }
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             custom_button.stop()
+            motionLayout.transitionToStart()
+
             val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1) ?: 0
             val query = DownloadManager.Query().apply { setFilterById(id) }
             val cursor = downloadManager.query(query)
@@ -117,6 +123,30 @@ class MainActivity : AppCompatActivity() {
         downloadManager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
         downloadID =
             downloadManager.enqueue(request)// enqueue puts the download request in the queue.
+
+        animateCloud()
+    }
+
+    private fun animateCloud() {
+        motionLayout.setTransitionDuration(5000)
+        motionLayout.transitionToEnd()
+        motionLayout.addTransitionListener(object : MotionLayout.TransitionListener {
+            override fun onTransitionStarted(p0: MotionLayout?, p1: Int, p2: Int) {
+
+            }
+
+            override fun onTransitionChange(p0: MotionLayout?, p1: Int, p2: Int, p3: Float) {
+
+            }
+
+            override fun onTransitionCompleted(p0: MotionLayout?, p1: Int) {
+                motionLayout.transitionToStart()
+            }
+
+            override fun onTransitionTrigger(p0: MotionLayout?, p1: Int, p2: Boolean, p3: Float) {
+
+            }
+        })
     }
 
     private fun createChannel(channelId: String, channelName: String) {
