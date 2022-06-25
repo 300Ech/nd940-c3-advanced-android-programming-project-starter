@@ -17,4 +17,7 @@
 
     <string name="download">Download</string>
     <string name="we_are_loading">We are loading</string>
+
+    <string name="download_successful_message">The file %s for %s has been downloaded.</string>
+    <string name="download_failed_message">The file %s for %s was not found.</string>
 </resources>
