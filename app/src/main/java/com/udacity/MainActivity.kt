@@ -1,18 +1,22 @@
 package com.udacity
 
 import android.app.DownloadManager
+import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.widget.RadioButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import com.udacity.util.cancelNotifications
+import com.udacity.util.sendNotification
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import java.lang.Exception
@@ -22,8 +26,6 @@ class MainActivity : AppCompatActivity() {
     private var downloadID: Long = 0
 
     private lateinit var notificationManager: NotificationManager
-    private lateinit var pendingIntent: PendingIntent
-    private lateinit var action: NotificationCompat.Action
     private lateinit var downloadManager: DownloadManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,6 +36,11 @@ class MainActivity : AppCompatActivity() {
         registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
 
         custom_button.setOnClickListener { download() }
+
+        createChannel(
+            getString(R.string.app_notification_channel_id),
+            getString(R.string.app_notification_channel_name)
+        )
     }
 
     private val receiver = object : BroadcastReceiver() {
@@ -52,8 +59,8 @@ class MainActivity : AppCompatActivity() {
                 val columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
 
                 if (DownloadManager.STATUS_SUCCESSFUL == cursor.getInt(columnIndex))
-                    showSuccessMessage(filename, option.toString()
-                ) else showErrorMessage(filename, option.toString())
+                    showSuccessMessage(filename, option.toString())
+                else showErrorMessage(filename, option.toString())
             }
         }
     }
@@ -64,6 +71,24 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.download_successful_message, filename, option),
             Toast.LENGTH_LONG
         ).show()
+
+        // building the notification
+        notificationManager = ContextCompat.getSystemService(
+            this,
+            NotificationManager::class.java
+        ) as NotificationManager
+        notificationManager.cancelNotifications()
+
+        notificationManager.sendNotification(
+            getString(
+                R.string.download_successful_message,
+                filename,
+                option
+            ),
+            filename,
+            getString(R.string.success),
+            this
+        )
     }
 
     private fun showErrorMessage(filename: String, option: String) {
@@ -92,6 +117,24 @@ class MainActivity : AppCompatActivity() {
         downloadManager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
         downloadID =
             downloadManager.enqueue(request)// enqueue puts the download request in the queue.
+    }
+
+    private fun createChannel(channelId: String, channelName: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationChannel =
+                NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH)
+                    .apply {
+                        setShowBadge(false)
+                    }
+
+            notificationChannel.enableLights(true)
+            notificationChannel.lightColor = Color.RED
+            notificationChannel.enableVibration(true)
+            notificationChannel.description = getString(R.string.app_description)
+
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager.createNotificationChannel(notificationChannel)
+        }
     }
 
     companion object {
